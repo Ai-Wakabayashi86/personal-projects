@@ -12,6 +12,8 @@
 - `WorldQuiz` ブランチ  
   WorldQuiz アプリのソースコードを管理しています。
 
+- `ThaiPrefecture` ブランチ  
+  Thai Prefecture アプリのソースコードを管理しています。
 
 ## ブランチの確認方法
 
