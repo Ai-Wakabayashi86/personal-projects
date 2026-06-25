@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>7x7 数字結合ゲーム</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  margin: 0;
+  background: #f4f1ea;
+}
+
+#game {
+  text-align: center;
+}
+
+#status {
+  margin-bottom: 10px;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+#tutorialButton {
+  margin-bottom: 16px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 999px;
+  background: #5f27cd;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#board {
+  position: relative;
+}
+
+.cell {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  user-select: none;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.35);
+  border: 2px solid rgba(255,255,255,0.35);
+  box-shadow: 0 3px 0 #aaa;
+  transition:
+    left 0.25s ease,
+    top 0.25s ease,
+    transform 0.18s ease,
+    opacity 0.2s ease;
+}
+
+.pop {
+  animation: pop 0.18s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(1.15); }
+  to { transform: scale(1); }
+}
+
+#tutorialOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  place-items: center;
+  z-index: 10;
+}
+
+#tutorialBox {
+  width: min(90vw, 430px);
+  background: white;
+  color: #333;
+  border-radius: 18px;
+  padding: 24px;
+  text-align: left;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+
+#tutorialBox h2 {
+  margin-top: 0;
+}
+
+#tutorialBox button {
+  display: block;
+  margin: 20px auto 0;
+  padding: 8px 20px;
+  border: none;
+  border-radius: 999px;
+  background: #222;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+<div id="game">
+  <div id="status">残りクリック: 5</div>
+  <button id="tutorialButton">遊び方</button>
+  <div id="board"></div>
+</div>
+
+<div id="tutorialOverlay">
+  <div id="tutorialBox">
+    <h2>遊び方</h2>
+    <p>数字のマスをクリックすると、その数字が1つ増えます。</p>
+    <p>同じ数字が上下左右で3つ以上つながると、自動で結合します。</p>
+    <p>結合すると数字が1つ大きくなり、残りクリック数が1回復します。</p>
+    <p>空いた場所には上のマスが落ちてきて、最上段に新しい数字が追加されます。</p>
+    <p>残りクリック数が0を下回るとゲームオーバーです。</p>
+    <p>残りクリック数が50、100、150、200…になるとレベルアップします。</p>
+    <button id="closeTutorialButton">閉じる</button>
+  </div>
+</div>
+
+<script>
+const SIZE = 7;
+const CELL = 70;
+const GAP = 8;
+
+const board = document.getElementById("board");
+const status = document.getElementById("status");
+const tutorialButton = document.getElementById("tutorialButton");
+const tutorialOverlay = document.getElementById("tutorialOverlay");
+const closeTutorialButton = document.getElementById("closeTutorialButton");
+
+board.style.width = `${SIZE * CELL + (SIZE - 1) * GAP}px`;
+board.style.height = `${SIZE * CELL + (SIZE - 1) * GAP}px`;
+
+let nextId = 1;
+let clicksLeft = 5;
+let gameOver = false;
+let isAnimating = false;
+
+let level = 1;
+let maxSpawn = 5;
+let nextLevelClicks = 50;
+
+let grid = Array.from({ length: SIZE }, () =>
+  Array.from({ length: SIZE }, () => createTile(randomNumber()))
+);
+
+function createTile(value) {
+  return {
+    id: nextId++,
+    value
+  };
+}
+
+function randomNumber() {
+  return Math.floor(Math.random() * maxSpawn) + 1;
+}
+
+function getX(x) {
+  return x * (CELL + GAP);
+}
+
+function getY(y) {
+  return y * (CELL + GAP);
+}
+
+function updateStatus() {
+  if (gameOver) {
+    status.textContent = "ゲームオーバー";
+  } else {
+    status.textContent =
+      `残りクリック:${clicksLeft}　Lv.${level}　次Lv:${nextLevelClicks}　出現:1〜${maxSpawn}`;
+  }
+}
+
+function checkLevelUp() {
+  while (clicksLeft >= nextLevelClicks) {
+    level++;
+    maxSpawn = Math.min(5 + level - 1, 15);
+    nextLevelClicks += 50;
+
+    alert(`レベル${level}！\n出現数字が1〜${maxSpawn}になりました！`);
+  }
+}
+
+function getColor(n) {
+  const colors = {
+    1: "linear-gradient(145deg, #f7d794, #f3c969)",
+    2: "linear-gradient(145deg, #f6b93b, #e58e26)",
+    3: "linear-gradient(145deg, #e55039, #b71540)",
+    4: "linear-gradient(145deg, #8e44ad, #5f27cd)",
+    5: "linear-gradient(145deg, #48dbfb, #0abde3)",
+    6: "linear-gradient(145deg, #1dd1a1, #10ac84)",
+    7: "linear-gradient(145deg, #feca57, #ff9f43)",
+    8: "linear-gradient(145deg, #ff6b6b, #ee5253)",
+    9: "linear-gradient(145deg, #c8d6e5, #8395a7)",
+    10: "linear-gradient(145deg, #ffd700, #b8860b)",
+    11: "linear-gradient(145deg, #e0c3fc, #8ec5fc)",
+    12: "linear-gradient(145deg, #00f2fe, #4facfe)",
+    13: "linear-gradient(145deg, #f093fb, #f5576c)",
+    14: "linear-gradient(145deg, #5f27cd, #341f97)",
+    15: "linear-gradient(145deg, #ffffff, #ffd700)"
+  };
+
+  return colors[n] || "linear-gradient(145deg, #111, #444, #ffd700)";
+}
+
+function render() {
+  board.innerHTML = "";
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const tile = grid[y][x];
+      const cell = document.createElement("div");
+
+      cell.className = "cell";
+      cell.textContent = tile.value;
+      cell.style.background = getColor(tile.value);
+      cell.style.left = `${getX(x)}px`;
+      cell.style.top = `${getY(y)}px`;
+      cell.style.transform = "scale(1)";
+      cell.style.opacity = "1";
+
+      cell.onclick = () => handleClick(x, y);
+
+      board.appendChild(cell);
+    }
+  }
+}
+
+async function handleClick(x, y) {
+  if (gameOver || isAnimating) return;
+
+  isAnimating = true;
+
+  clicksLeft--;
+  checkLevelUp();
+  updateStatus();
+
+  if (clicksLeft < 0) {
+    gameOver = true;
+    updateStatus();
+    isAnimating = false;
+    return;
+  }
+
+  grid[y][x].value++;
+
+  await animatePop(x, y);
+  await mergeAll();
+
+  render();
+  updateStatus();
+
+  isAnimating = false;
+}
+
+async function mergeAll() {
+  while (true) {
+    const result = findMergeGroup();
+
+    if (!result) break;
+
+    const { group, value, targetX, targetY } = result;
+
+    await animateMerge(group, targetX, targetY);
+
+    for (const [gx, gy] of group) {
+      grid[gy][gx] = null;
+    }
+
+    grid[targetY][targetX] = createTile(value + 1);
+
+    clicksLeft++;
+    checkLevelUp();
+    updateStatus();
+
+    await dropCells();
+  }
+}
+
+function findMergeGroup() {
+  const visited = Array.from({ length: SIZE }, () =>
+    Array(SIZE).fill(false)
+  );
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      if (visited[y][x]) continue;
+
+      const tile = grid[y][x];
+      if (!tile) continue;
+
+      const group = getConnectedGroupWithVisited(
+        x,
+        y,
+        tile.value,
+        visited
+      );
+
+      if (group.length >= 3) {
+        return {
+          group,
+          value: tile.value,
+          targetX: group[0][0],
+          targetY: group[0][1]
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+function getConnectedGroupWithVisited(startX, startY, value, visited) {
+  const stack = [[startX, startY]];
+  const group = [];
+
+  while (stack.length > 0) {
+    const [x, y] = stack.pop();
+
+    if (x < 0 || x >= SIZE || y < 0 || y >= SIZE) continue;
+    if (visited[y][x]) continue;
+    if (!grid[y][x]) continue;
+    if (grid[y][x].value !== value) continue;
+
+    visited[y][x] = true;
+    group.push([x, y]);
+
+    stack.push([x + 1, y]);
+    stack.push([x - 1, y]);
+    stack.push([x, y + 1]);
+    stack.push([x, y - 1]);
+  }
+
+  return group;
+}
+
+async function animatePop(x, y) {
+  render();
+
+  const index = y * SIZE + x;
+  const cell = board.children[index];
+
+  cell.classList.add("pop");
+
+  await wait(180);
+}
+
+async function animateMerge(group, targetX, targetY) {
+  render();
+
+  for (const [x, y] of group) {
+    if (x === targetX && y === targetY) continue;
+
+    const index = y * SIZE + x;
+    const cell = board.children[index];
+
+    cell.style.left = `${getX(targetX)}px`;
+    cell.style.top = `${getY(targetY)}px`;
+    cell.style.transform = "scale(0.2)";
+    cell.style.opacity = "0";
+  }
+
+  await wait(250);
+}
+
+async function dropCells() {
+  const oldPositions = new Map();
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const tile = grid[y][x];
+
+      if (tile) {
+        oldPositions.set(tile.id, { x, y });
+      }
+    }
+  }
+
+  for (let x = 0; x < SIZE; x++) {
+    const tiles = [];
+
+    for (let y = SIZE - 1; y >= 0; y--) {
+      if (grid[y][x]) {
+        tiles.push(grid[y][x]);
+      }
+    }
+
+    for (let y = SIZE - 1; y >= 0; y--) {
+      grid[y][x] = tiles.shift() || createTile(randomNumber());
+    }
+  }
+
+  render();
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const tile = grid[y][x];
+      const cell = board.children[y * SIZE + x];
+      const old = oldPositions.get(tile.id);
+
+      cell.style.transition = "none";
+
+      if (old) {
+        cell.style.left = `${getX(old.x)}px`;
+        cell.style.top = `${getY(old.y)}px`;
+      } else {
+        cell.style.left = `${getX(x)}px`;
+        cell.style.top = `${getY(-1)}px`;
+      }
+
+      requestAnimationFrame(() => {
+        cell.style.transition = "left 0.25s ease, top 0.25s ease";
+        cell.style.left = `${getX(x)}px`;
+        cell.style.top = `${getY(y)}px`;
+      });
+    }
+  }
+
+  await wait(280);
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+tutorialButton.onclick = () => {
+  tutorialOverlay.style.display = "grid";
+};
+
+closeTutorialButton.onclick = () => {
+  tutorialOverlay.style.display = "none";
+};
+
+tutorialOverlay.onclick = (event) => {
+  if (event.target === tutorialOverlay) {
+    tutorialOverlay.style.display = "none";
+  }
+};
+
+async function startGame() {
+  isAnimating = true;
+
+  render();
+  updateStatus();
+
+  await mergeAll();
+
+  render();
+  updateStatus();
+
+  isAnimating = false;
+}
+
+startGame();
+</script>
+</body>
+</html>
