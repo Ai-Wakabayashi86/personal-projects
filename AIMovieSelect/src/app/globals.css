@@ -1,0 +1,92 @@
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #f4f4f4;
+}
+
+.container {
+  max-width: 700px;
+  margin: 60px auto;
+  padding: 20px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 42px;
+  margin-bottom: 20px;
+}
+
+.description {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+textarea {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+button {
+  margin-top: 20px;
+  padding: 15px 40px;
+  font-size: 18px;
+  border: none;
+  border-radius: 10px;
+  background: #1f2937;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #374151;
+}
+
+.mood-form {
+  width: 100%;
+}
+
+.movie-list {
+  margin-top: 40px;
+  text-align: left;
+}
+
+.movie-list h2 {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.movie-card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.movie-card h3 {
+  margin-top: 0;
+}
+
+.genre {
+  color: #666;
+  font-weight: bold;
+}
+
+.loading-text {
+  margin-top: 24px;
+  font-size: 16px;
+  color: #666;
+  text-align: center;
+}
+
+.error-text {
+  margin-top: 10px;
+  color: #dc2626;
+  font-size: 14px;
+}
